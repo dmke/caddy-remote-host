@@ -4,16 +4,17 @@ package caddy_remote_host
 
 import (
 	"fmt"
-	"github.com/caddyserver/caddy/v2"
-	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
-	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
-	"github.com/patrickmn/go-cache"
-	"go.uber.org/zap"
 	"net"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/caddyserver/caddy/v2"
+	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
+	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
+	"github.com/patrickmn/go-cache"
+	"go.uber.org/zap"
 )
 
 var hostRegex *regexp.Regexp
@@ -85,7 +86,7 @@ func (m *MatchRemoteHost) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 
 // Provision implements caddy.Provisioner.
 func (m *MatchRemoteHost) Provision(ctx caddy.Context) (err error) {
-	m.logger = ctx.Logger(m)
+	m.logger = ctx.Logger()
 	m.cache = cache.New(1*time.Minute, 2*time.Minute)
 	hostRegex, err = regexp.Compile(`^((([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9]))$`)
 	return err

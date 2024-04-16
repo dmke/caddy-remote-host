@@ -2,27 +2,37 @@ name: Go
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
+  # add manual trigger button
+  workflow_dispatch:
 
 jobs:
   build:
-    name: Build
+    name: Build (Go ${{ matrix.go-version }})
+    strategy:
+      matrix:
+        go-version: [stable, oldstable]
+
     runs-on: ubuntu-latest
     steps:
+      - name: Check out code
+        uses: actions/checkout@v4
 
-      - name: Set up Go 1.x
-        uses: actions/setup-go@v2
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          go-version: ^1.14
-        id: go
+          go-version: ${{ matrix.go-version }}
 
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+      - name: Fetch dependencies
+        run: go mod download -x
 
-      - name: Get dependencies
-        run: |
-          go get -v -t -d ./...
-      - name: Build
-        run: go build -v .
+      - name: Run tests
+        run: go test -v ./...
+
+      - name: Install xcaddy
+        run: go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+
+      - name: Build caddy plugin
+        run: xcaddy build

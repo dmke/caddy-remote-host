@@ -18,7 +18,8 @@ import (
 )
 
 var hostRegex *regexp.Regexp
-var cacheKey string = "hosts"
+
+const cacheKey = "hosts"
 
 func init() {
 	caddy.RegisterModule(MatchRemoteHost{})
@@ -88,7 +89,15 @@ func (m *MatchRemoteHost) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 func (m *MatchRemoteHost) Provision(ctx caddy.Context) (err error) {
 	m.logger = ctx.Logger()
 	m.cache = cache.New(1*time.Minute, 2*time.Minute)
-	hostRegex, err = regexp.Compile(`^((([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9]))$`)
+
+	const (
+		alnum     = "[a-zA-Z0-9]"
+		alnumDash = "[-a-zA-Z0-9]"
+		label     = "(" + alnum + "|" + alnum + alnumDash + "*" + alnum + ")"
+		hostname  = "^(" + label + `\.)*` + label + "$"
+	)
+
+	hostRegex, err = regexp.Compile(hostname)
 	return err
 }
 

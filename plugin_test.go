@@ -4,8 +4,10 @@ package caddy_remote_host_test
 // methods see package caddy_remote_host.
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
 	plugin "github.com/muety/caddy-remote-host"
 	"github.com/stretchr/testify/assert"
@@ -111,6 +113,54 @@ func TestMatchRemoteHost_UnmarshalCaddyfile_invalid(t *testing.T) {
 
 			err := subject.UnmarshalCaddyfile(disp)
 			assert.EqualError(err, tt.err)
+		})
+	}
+}
+
+func TestMatchRemoteHost_Validate(t *testing.T) {
+	for name, hosts := range map[string][]string{
+		"single":         {"example"},
+		"simple":         {"example.com"},
+		"multiple":       {"example.com", "example.org"},
+		"subdomain":      {"sub.example.com"},
+		"hyphens":        {"ex-am-ple.com"},
+		"digits":         {"example24.com"},
+		"leading digits": {"42example.org"},
+		"only digits":    {"42.example"},
+	} {
+		hosts := hosts
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			subject := plugin.MatchRemoteHost{Hosts: hosts}
+			require.NoError(t, subject.Provision(caddy.Context{}))
+			assert.NoError(t, subject.Validate())
+		})
+	}
+}
+
+func TestMatchRemoteHost_Validate_invalid(t *testing.T) {
+	require := require.New(t)
+	assert := assert.New(t)
+
+	for name, host := range map[string]string{
+		"dot":           ".",
+		"double dot":    "example..com",
+		"leading dot":   ".example.org",
+		"leading dash":  "-example.org",
+		"trailing dash": "example-.org",
+		"underscore":    "_http.example",
+		"non-acsii":     "ëxample.com",
+		"wildcard":      "*.example.com",
+	} {
+		host := host
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			subject := plugin.MatchRemoteHost{Hosts: []string{host}}
+			require.NoError(subject.Provision(caddy.Context{}))
+			assert.EqualError(subject.Validate(),
+				fmt.Sprintf("'%s' is not a valid host name", host))
 		})
 	}
 }

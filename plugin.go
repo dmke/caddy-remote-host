@@ -48,6 +48,9 @@ type MatchRemoteHost struct {
 
 	logger *zap.Logger
 	cache  *cache.Cache
+
+	// resolver is set in tests to provide canned results
+	resolver resolver
 }
 
 // CaddyModule returns the Caddy module information.
@@ -160,7 +163,7 @@ func (m *MatchRemoteHost) resolveIPs() ([]net.IP, error) {
 	allIPs := make([]net.IP, 0)
 
 	for _, h := range m.Hosts {
-		ips, err := net.LookupIP(h)
+		ips, err := lookupIP(m.resolver, h)
 		if err != nil {
 			return nil, err
 		}
